@@ -1,0 +1,57 @@
+{
+  "name": "@hexlet/code",
+  "version": "1.0.0",
+  "description": "education project",
+  "main": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "jest",
+    "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
+    "prepublishOnly": "npm run build"
+  },
+  "bin": {
+    "page-loader": "bin/pageloader.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loukianen/frontent-testing-react-project-lvl1.git"
+  },
+  "keywords": [
+    "test",
+    "react"
+  ],
+  "author": "Lukyanenok Konstantin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/loukianen/frontent-testing-react-project-lvl1/issues"
+  },
+  "homepage": "https://github.com/loukianen/frontent-testing-react-project-lvl1#readme",
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
+  },
+  "import/extensions": [".js", ".jsx", ".json", ".mjs"],
+  "devDependencies": {
+    "@babel/core": "^7.13.14",
+    "@babel/preset-env": "^7.13.12",
+    "babel-jest": "^26.6.3",
+    "eslint": "^7.23.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^24.3.4",
+    "jest": "^26.6.3",
+    "nock": "^13.0.11"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "commander": "^7.2.0"
+  }
+}
