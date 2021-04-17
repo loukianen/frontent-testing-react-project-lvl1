@@ -1,7 +1,7 @@
-import pageLoader from '../index.mjs';
 import { program } from 'commander';
-import path from 'path'
+import path from 'path';
 import fs from 'fs';
+import pageLoader from '../index.mjs';
 
 const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), './package.json')));
 

@@ -5,6 +5,6 @@ exs:
 publish:
 	npm publish --dry-run
 lint:
-	npx eslint .
+	npx eslint --ext js --ext mjs .
 test:
 	NODE_OPTIONS=--experimental-vm-modules npx jest
