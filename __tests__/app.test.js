@@ -4,13 +4,12 @@ import promises from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import app from '../app/app.mjs';
+import filesData from '../__fixtures__/filesData.mjs';
 
 const url = new URL('https://ru.hexlet.io/courses');
 const pageName = 'ru-hexlet-io-courses';
 const contentPath = `${process.cwd()}/__fixtures__/fakeCoursesPage.html`;
 const proccessedContentPath = `${process.cwd()}/__fixtures__/gaugeLocalCoursesPage.html`;
-const pngSource = '/assets/professions/nodejs.png';
-const pngFileName = '/ru-hexlet-io-assets-professions-nodejs.png';
 
 let content;
 let proccessedContent;
@@ -35,11 +34,17 @@ beforeAll(async () => Promise.all([
 }));
 
 test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
-  nock(url.origin)
-    .get(url.pathname)
-    .reply(200, content);
-  nock(url.origin).get(pngSource)
-    .reply(200, () => fs.createReadStream(`__fixtures__${pngSource}`), { responseType: 'steam' });
+  // mocking of http-response
+  nock(url.origin).get(url.pathname).times(2).reply(200, content);
+  filesData.sourceIds.slice(0, 3).forEach((id) => {
+    nock(url.origin).get(filesData.sources[id].source)
+      .reply(
+        200,
+        () => fs.createReadStream(`__fixtures__${filesData.sources[id].source}`),
+        { responseType: 'steam' },
+      );
+  });
+
   const [dir, args] = getData(dirType, url.href);
   const filepath = await app(...args); // main html
   const fileContent = await promises.readFile(`${dir}/${pageName}.html`, 'utf-8');
@@ -52,7 +57,9 @@ test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) =>
 
   // checking that directory and files exists
   expect(await promises.access(`${dir}/${pageName}_files`)).toBeUndefined();
-  expect(await promises.access(`${dir}/${pageName}_files${pngFileName}`)).toBeUndefined();
+  Promise.all(filesData.sourceIds.map((id) => promises
+    .access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`)))
+    .then((results) => results.forEach((result) => expect(result).toBeUndefined()));
 });
 
 afterAll(async () => {

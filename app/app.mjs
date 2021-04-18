@@ -4,6 +4,7 @@ import promises from 'fs/promises';
 import cheerio from 'cheerio';
 
 const defaultDir = process.cwd();
+const tags = ['img', 'link', 'script'];
 
 const createFile = async (source, filepath) => {
   try {
@@ -19,21 +20,28 @@ const createFile = async (source, filepath) => {
   }
 };
 
-const getPageName = (url) => {
+const getAttr = (tag) => {
+  switch (tag) {
+    case 'img':
+      return 'src';
+    case 'link':
+      return 'href';
+    case 'script':
+      return 'src';
+    default:
+      throw new Error('Unknown tag name');
+  }
+};
+
+const getName = (url) => {
   const nameFromHostName = `${url.hostname.split('.').join('-')}`;
   const nameFromPath = url.pathname.length > 1 ? `${url.pathname.split('/').join('-')}` : '';
   return `${nameFromHostName}${nameFromPath}`;
 };
 
-const getFileName = (host, path) => {
-  const nameFromHostName = `${host.split('.').join('-')}`;
-  const nameFromPath = path.length > 1 ? `${path.split('/').join('-')}` : '';
-  return `${nameFromHostName}${nameFromPath}`;
-};
-
 export default async (requestUrl, dir = defaultDir) => {
   const url = new URL(requestUrl);
-  const pageName = getPageName(url);
+  const pageName = getName(url);
 
   // creatig a directory for local files
   const filesDirName = `${dir}/${pageName}_files`;
@@ -43,19 +51,32 @@ export default async (requestUrl, dir = defaultDir) => {
   const answer = await axios.get(url.href);
   const $ = cheerio.load(answer.data);
 
+  const filesSource = [];
   // creating local source files for img-tags and swapping file names
-  $('img').map((i, el) => {
-    const newEl = { ...el };
-    const curFileName = el.attribs.src;
-    const newFileName = `${pageName}_files/${getFileName(url.hostname, curFileName)}`;
-    newEl.attribs.src = newFileName;
-    createFile(`${url.origin}${curFileName}`, `${dir}/${newFileName}`);
-    return newEl;
+  tags.forEach((tag) => {
+    $(tag).map((i, el) => {
+      const attr = getAttr(tag);
+      const newEl = { ...el };
+      const curFileName = el.attribs[attr];
+      const sourceUrl = new URL(curFileName, url);
+      if (sourceUrl.host === url.host) {
+        const newFileName = sourceUrl.href === url.href
+          ? `${pageName}_files/${getName(sourceUrl)}.html`
+          : `${pageName}_files/${getName(sourceUrl)}`;
+        newEl.attribs[attr] = newFileName;
+        filesSource.push({ sourceUrl, newFileName });
+      }
+      return newEl;
+    });
   });
 
   // creating a main local html-file
   const filepath = `${dir}/${pageName}.html`;
   await promises.writeFile(filepath, $.html(), 'utf-8');
 
+  // loading and creating local files
+  filesSource.forEach((item) => {
+    createFile(item.sourceUrl.href, `${dir}/${item.newFileName}`);
+  });
   return filepath;
 };
