@@ -1,9 +1,8 @@
 install:
 	npm install
+	npm link
 exs:
-	pageloader -o /var/tmp __fixture__/hello.txt
-publish:
-	npm publish --dry-run
+	page-loader https://sea-battle-nine.vercel.app
 lint:
 	npx eslint --ext js --ext mjs .
 test:

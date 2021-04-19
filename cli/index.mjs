@@ -1,9 +1,12 @@
 import { program } from 'commander';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import pageLoader from '../index.mjs';
 
-const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), './package.json')));
+const filename = fileURLToPath(import.meta.url);
+const dirname = path.dirname(filename);
+const pkg = JSON.parse(fs.readFileSync(path.resolve(dirname, '../package.json')));
 
 export default () => {
   program.version(pkg.version);
