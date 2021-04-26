@@ -28,60 +28,63 @@ const getData = (type, filePath) => {
   };
   return mapping[type]();
 };
-
-beforeAll(async () => {
-  debugFsRead('Read file %s', contentPath);
-  debugFsRead('Read file %s', proccessedContentPath);
-  debugFsWrite('Make temporary directory %s', path.join(os.tmpdir()));
-  await Promise.all([
-    promises.readFile(contentPath, 'utf-8'),
-    promises.readFile(proccessedContentPath, 'utf-8'),
-    promises.mkdtemp(path.join(os.tmpdir(), 'page-loader-')),
-  ]).then(([fakeHtlm, proccessedHtml, tmpdirName]) => {
-    content = fakeHtlm;
-    proccessedContent = proccessedHtml;
-    tmpdir = tmpdirName;
-  });
-});
-
-test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
-  // mocking of http-response
-  debugMock('Mocking http request %s', url.pathname);
-  nock(url.origin).get(url.pathname).times(2).reply(200, content);
-  filesData.sourceIds.slice(0, 3).forEach((id) => {
-    debugMock('Mocking http request %s', filesData.sources[id].source);
-    nock(url.origin).get(filesData.sources[id].source)
-      .reply(
-        200,
-        () => fs.createReadStream(`__fixtures__${filesData.sources[id].source}`),
-        { responseType: 'steam' },
-      );
+describe('testing function app', () => {
+  beforeAll(async () => {
+    debugFsRead('Read file %s', contentPath);
+    debugFsRead('Read file %s', proccessedContentPath);
+    debugFsWrite('Make temporary directory %s', path.join(os.tmpdir()));
+    await Promise.all([
+      promises.readFile(contentPath, 'utf-8'),
+      promises.readFile(proccessedContentPath, 'utf-8'),
+      promises.mkdtemp(path.join(os.tmpdir(), 'page-loader-')),
+    ]).then(([fakeHtlm, proccessedHtml, tmpdirName]) => {
+      content = fakeHtlm;
+      proccessedContent = proccessedHtml;
+      tmpdir = tmpdirName;
+    });
   });
 
-  const [dir, args] = getData(dirType, url.href);
-  const filepath = await app(...args); // main html
-  debugFsRead('Read file %s', `${dir}/${pageName}.html`);
-  const fileContent = await promises.readFile(`${dir}/${pageName}.html`, 'utf-8');
+  test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
+    // mocking of http-response
+    debugMock('Mocking http request %s', url.pathname);
+    nock(url.origin).get(url.pathname).times(2).reply(200, content);
+    filesData.sourceIds.slice(0, 3).forEach((id) => {
+      debugMock('Mocking http request %s', filesData.sources[id].source);
+      nock(url.origin).get(filesData.sources[id].source)
+        .reply(
+          200,
+          () => fs.createReadStream(`__fixtures__${filesData.sources[id].source}`),
+          { responseType: 'steam' },
+        );
+    });
 
-  // checking that app return filename
-  expect(filepath).toBe(`${dir}/${pageName}.html`);
+    const [dir, args] = getData(dirType, url.href);
+    const filepath = await app(...args); // main html
+    debugFsRead('Read file %s', `${dir}/${pageName}.html`);
+    const fileContent = await promises.readFile(`${dir}/${pageName}.html`, 'utf-8');
 
-  // checking main htlm-file content
-  expect(fileContent).toBe(proccessedContent);
+    // checking that app return filename
+    expect(filepath).toBe(`${dir}/${pageName}.html`);
 
-  // checking that directory and files exists
-  expect(await promises.access(`${dir}/${pageName}_files`)).toBeUndefined();
-  await Promise.all(filesData.sourceIds.map((id) => {
-    debugFsRead('Read file %s', filesData.sources[id].fileName);
-    return promises.access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
-  })).then((results) => results.forEach((result) => expect(result).toBeUndefined()));
-});
+    // checking main htlm-file content
+    expect(fileContent).toBe(proccessedContent);
 
-afterAll(async () => {
-  debugFsRm('Remove temporary directory %s', tmpdir);
-  debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}_files`);
-  debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}.html`);
-  await promises.rmdir(tmpdir, { recursive: true });
-  await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
-  await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
+    // checking that directory and files exists
+    expect(await promises.access(`${dir}/${pageName}_files`)).toBeUndefined();
+
+    // checking that files exists
+    await Promise.all(filesData.sourceIds.map((id) => {
+      debugFsRead('Read file %s', filesData.sources[id].fileName);
+      return promises.access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
+    })).then((results) => results.forEach((result) => expect(result).toBeUndefined()));
+  });
+
+  afterAll(async () => {
+    debugFsRm('Remove temporary directory %s', tmpdir);
+    debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}_files`);
+    debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}.html`);
+    await promises.rmdir(tmpdir, { recursive: true });
+    await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
+    await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
+  });
 });

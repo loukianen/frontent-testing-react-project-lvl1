@@ -6,4 +6,4 @@ exs:
 lint:
 	npx eslint --ext js --ext mjs .
 test:
-	NODE_OPTIONS=--experimental-vm-modules npx jest
+	NODE_OPTIONS=--experimental-vm-modules jest

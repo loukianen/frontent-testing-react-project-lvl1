@@ -1,5 +1,6 @@
 import axios from 'axios';
 import debug from 'debug';
+import axiosDebagLog from 'axios-debug-log';
 import fs from 'fs';
 import promises from 'fs/promises';
 import path from 'path';
@@ -8,24 +9,25 @@ import cheerio from 'cheerio';
 const debugHttpFiles = debug('page-loader:http:files');
 const debugHttpMain = debug('page-loader:http:main');
 const debugFs = debug('page-loader:fs:');
-const debug$ = debug('page-loader:$:');
 
 const defaultDir = process.cwd();
 const tags = ['img', 'link', 'script'];
 
 const createFile = async (source, filepath) => {
   debugHttpFiles('GET %s', source);
-  const response = await axios({
-    url: source,
+  const request = axios.create({
+    baseURL: source,
     method: 'GET',
     responseType: 'stream',
   });
   debugFs('Create file %s', filepath);
+  axiosDebagLog.addLogger(request, debugFs);
+  const response = await request();
   await response.data.pipe(fs.createWriteStream(filepath));
   return true;
 };
 
-const getAttr = (tag) => {
+const getAttrName = (tag) => {
   switch (tag) {
     case 'img':
       return 'src';
@@ -44,6 +46,37 @@ const getName = (url) => {
   return `${nameFromHostName}${nameFromPath}`;
 };
 
+const getFilePath = (sourceUrl, baseUrl) => {
+  const name = `${getName(baseUrl)}_files/${getName(sourceUrl)}`;
+  const isSourceDirectory = path.extname(sourceUrl.href) === '';
+  return isSourceDirectory ? `${name}.html` : name;
+};
+
+const getSourcesInfo = (html, tagNames, baseUrl) => {
+  const foundLinks = tagNames.reduce((acc, tag) => {
+    const links = [];
+    cheerio.load(html)(tag).each((i, el) => {
+      links[i] = { tag, origin: cheerio(el).attr(getAttrName(tag)) };
+    });
+    return [...acc, ...links];
+  }, []);
+  const linksForComparison = foundLinks
+    .map((link) => ({ ...link, normalized: new URL(link.origin, baseUrl) }));
+  const localLinks = linksForComparison
+    .filter(({ normalized }) => normalized.host === baseUrl.host);
+  return localLinks
+    .map((item) => ({ ...item, newFilePath: getFilePath(item.normalized, baseUrl) }));
+};
+
+const getNewHtml = (sourcesData, html) => {
+  const $ = cheerio.load(html);
+  sourcesData.forEach(({ tag, origin, newFilePath }) => {
+    const attrName = getAttrName(tag);
+    $(`${tag}[${attrName}="${origin}"]`).attr(attrName, newFilePath);
+  });
+  return $.html();
+};
+
 export default async (requestUrl, dir = defaultDir) => {
   const url = new URL(requestUrl);
   const pageName = getName(url);
@@ -51,39 +84,21 @@ export default async (requestUrl, dir = defaultDir) => {
 
   // getting a content
   debugHttpMain('GET %s', url.href);
-  const answer = await axios.get(url.href);
-  const $ = cheerio.load(answer.data);
+  const { data } = await axios.get(url.href);
 
-  const filesSource = [];
-  // choose source for local files and swapping source names
-  tags.forEach((tag) => {
-    debug$('Proccess tag %s', tag);
-    $(tag).map((i, el) => {
-      const attr = getAttr(tag);
-      const newEl = { ...el };
-      const curFileName = el.attribs[attr];
-      const sourceUrl = new URL(curFileName, url);
-      if (sourceUrl.host === url.host) {
-        const name = `${pageName}_files/${getName(sourceUrl)}`;
-        const isSourceDirectory = path.extname(sourceUrl.href) === '';
-        const newFileName = isSourceDirectory ? `${name}.html` : name;
-        newEl.attribs[attr] = newFileName;
-        filesSource.push({ sourceUrl, newFileName });
-      }
-      return newEl;
-    });
-  });
+  const filesSource = getSourcesInfo(data, tags, url);
+  const newHtml = getNewHtml(filesSource, data);
 
   // creating a main local html-file
   const filepath = `${dir}/${pageName}.html`;
   debugFs('Create file %s', filepath);
-  await promises.writeFile(filepath, $.html(), 'utf-8');
+  await promises.writeFile(filepath, newHtml, 'utf-8');
 
   // loading and creating local files
   debugFs('Create directory %s', filesDirName);
   await promises.mkdir(filesDirName, { recursive: true });
   filesSource.forEach((item) => {
-    createFile(item.sourceUrl.href, `${dir}/${item.newFileName}`);
+    createFile(item.normalized.href, `${dir}/${item.newFilePath}`);
   });
   return filepath;
 };
