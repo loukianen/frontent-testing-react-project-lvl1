@@ -5,4 +5,4 @@ test: make test,
 lint: make lint,
 
 use:
-https://asciinema.org/a/iXaPxxSIbwl4MIT1f0FJix2Os
+https://asciinema.org/a/Y4yIV4jNJIzMoZ0Xrw5OgayPH

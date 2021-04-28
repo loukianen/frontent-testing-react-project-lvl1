@@ -1,10 +1,12 @@
 import axios from 'axios';
 import debug from 'debug';
-import axiosDebagLog from 'axios-debug-log';
+import 'axios-debug-log';
 import fs from 'fs';
 import promises from 'fs/promises';
 import path from 'path';
 import cheerio from 'cheerio';
+import PageLoaderNetError from './PageLoaderNetError.mjs';
+import PageLoaderFsError from './PageLoaderFsError.mjs';
 
 const debugHttpFiles = debug('page-loader:http:files');
 const debugHttpMain = debug('page-loader:http:main');
@@ -14,17 +16,24 @@ const defaultDir = process.cwd();
 const tags = ['img', 'link', 'script'];
 
 const createFile = async (source, filepath) => {
-  debugHttpFiles('GET %s', source);
-  const request = axios.create({
-    baseURL: source,
-    method: 'GET',
-    responseType: 'stream',
-  });
-  debugFs('Create file %s', filepath);
-  axiosDebagLog.addLogger(request, debugFs);
-  const response = await request();
-  await response.data.pipe(fs.createWriteStream(filepath));
-  return true;
+  let response;
+  try {
+    debugHttpFiles('GET %s', source);
+    const request = axios.create({
+      baseURL: source,
+      method: 'GET',
+      responseType: 'stream',
+    });
+    response = await request();
+  } catch (e) {
+    throw new PageLoaderNetError(e, source);
+  }
+  try {
+    await response.data.pipe(fs.createWriteStream(filepath));
+    return true;
+  } catch (e) {
+    throw new PageLoaderFsError(e, filepath);
+  }
 };
 
 const getAttrName = (tag) => {
@@ -63,7 +72,7 @@ const getSourcesInfo = (html, tagNames, baseUrl) => {
   const linksForComparison = foundLinks
     .map((link) => ({ ...link, normalized: new URL(link.origin, baseUrl) }));
   const localLinks = linksForComparison
-    .filter(({ normalized }) => normalized.host === baseUrl.host);
+    .filter(({ normalized, origin }) => origin && normalized.host === baseUrl.host);
   return localLinks
     .map((item) => ({ ...item, newFilePath: getFilePath(item.normalized, baseUrl) }));
 };
@@ -80,23 +89,41 @@ const getNewHtml = (sourcesData, html) => {
 export default async (requestUrl, dir = defaultDir) => {
   const url = new URL(requestUrl);
   const pageName = getName(url);
-  const filesDirName = `${dir}/${pageName}_files`;
-
-  // getting a content
-  debugHttpMain('GET %s', url.href);
-  const { data } = await axios.get(url.href);
-
-  const filesSource = getSourcesInfo(data, tags, url);
-  const newHtml = getNewHtml(filesSource, data);
-
-  // creating a main local html-file
   const filepath = `${dir}/${pageName}.html`;
-  debugFs('Create file %s', filepath);
-  await promises.writeFile(filepath, newHtml, 'utf-8');
+  const filesDirName = `${dir}/${pageName}_files`;
+  let html;
+  let newHtml;
+  let filesSource;
 
-  // loading and creating local files
-  debugFs('Create directory %s', filesDirName);
-  await promises.mkdir(filesDirName, { recursive: true });
+  try {
+    debugHttpMain('GET %s', url.href);
+    const { data } = await axios.get(url.href);
+    html = data;
+  } catch (e) {
+    throw new PageLoaderNetError(e, url.href);
+  }
+
+  try {
+    filesSource = getSourcesInfo(html, tags, url);
+    newHtml = getNewHtml(filesSource, html);
+  } catch (e) {
+    throw new Error('Failed to parse loaded data. Write us, please');
+  }
+
+  try {
+    debugFs('Create file %s', filepath);
+    await promises.writeFile(filepath, newHtml, 'utf-8');
+  } catch (e) {
+    throw new PageLoaderFsError(e, filepath);
+  }
+
+  try {
+    debugFs('Create directory %s', filesDirName);
+    await promises.mkdir(filesDirName, { recursive: true });
+  } catch (e) {
+    throw new PageLoaderFsError(e, filesDirName);
+  }
+
   filesSource.forEach((item) => {
     createFile(item.normalized.href, `${dir}/${item.newFilePath}`);
   });
