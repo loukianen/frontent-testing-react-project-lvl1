@@ -2,11 +2,11 @@ import { program } from 'commander';
 import path from 'path';
 // import { fileURLToPath } from 'url';
 import fs from 'fs';
-import pageLoader from '../index';
+import pageLoader from '../app';
 
 // const filename = fileURLToPath(import.meta.url);
 // const dirname = path.dirname(filename);
-const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json')));
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.json')));
 
 export default () => {
   program.version(pkg.version);
