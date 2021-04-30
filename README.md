@@ -1,4 +1,7 @@
 It's education project 'Page loader'. Main target is testing. Used nodejs, jest, eslint.
+For install this utility you should clone the recository end apply 'make install'.
+
+install: make install,
 
 test: make test,
 

@@ -4,6 +4,6 @@ install:
 exs:
 	page-loader https://sea-battle-nine.vercel.app
 lint:
-	npx eslint --ext js --ext mjs .
+	npx eslint .
 test:
-	NODE_OPTIONS=--experimental-vm-modules jest
+	jest
