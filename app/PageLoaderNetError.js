@@ -1,8 +1,5 @@
 const getCaseText = (code) => {
-  let text = 'Info';
-  if (code > 200) {
-    text = 'request was recived';
-  }
+  let text = 'info';
   if (code >= 300) {
     text = 'request was redirected';
   }
@@ -15,7 +12,7 @@ const getCaseText = (code) => {
   return `${text}, code: ${code}`;
 };
 
-const getReason = (err) => (err.response.status
+const getReason = (err) => (err.response
   ? `; - ${getCaseText(err.response.status)}.` : '.');
 
 export default class extends Error {

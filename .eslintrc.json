@@ -9,7 +9,7 @@
         "plugin:jest/recommended"
     ],
     "rules": {
-      "import/extensions": ["error", "always", { "mjs": "always" }]
+     //  "import/extensions": ["error", "always", { "mjs": "always" }]
     },
     "parserOptions": {
         "ecmaVersion": 12,

@@ -2,7 +2,7 @@ import { program } from 'commander';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import pageLoader from '../index.mjs';
+import pageLoader from '../index';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);

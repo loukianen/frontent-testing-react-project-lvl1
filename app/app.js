@@ -5,8 +5,8 @@ import fs from 'fs';
 import promises from 'fs/promises';
 import path from 'path';
 import cheerio from 'cheerio';
-import PageLoaderNetError from './PageLoaderNetError.mjs';
-import PageLoaderFsError from './PageLoaderFsError.mjs';
+import PageLoaderNetError from './PageLoaderNetError';
+import PageLoaderFsError from './PageLoaderFsError';
 
 const debugHttpFiles = debug('page-loader:http:files');
 const debugHttpMain = debug('page-loader:http:main');
@@ -114,14 +114,14 @@ export default async (requestUrl, dir = defaultDir) => {
     debugFs('Create file %s', filepath);
     await promises.writeFile(filepath, newHtml, 'utf-8');
   } catch (e) {
-    throw new PageLoaderFsError(e, filepath);
+    throw new PageLoaderFsError(e, dir);
   }
 
   try {
     debugFs('Create directory %s', filesDirName);
     await promises.mkdir(filesDirName, { recursive: true });
   } catch (e) {
-    throw new PageLoaderFsError(e, filesDirName);
+    throw new PageLoaderFsError(e, dir);
   }
 
   filesSource.forEach((item) => {

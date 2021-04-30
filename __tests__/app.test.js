@@ -4,10 +4,8 @@ import promises from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import debug from 'debug';
-import app from '../app/app.mjs';
-import filesData from '../__fixtures__/filesData.mjs';
-// import PageLoaderNetError from '../app/PageLoaderNetError.mjs';
-// import PageLoaderFsError from '../app/PageLoaderFsError.mjs';
+import app from '../app/app';
+import filesData from '../__fixtures__/filesData';
 
 const debugFsRead = debug('page-loader:fs:read');
 const debugFsWrite = debug('page-loader:fs:write');
@@ -47,52 +45,8 @@ describe('testing function app', () => {
     });
   });
 
-  test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
-    debugNock('Http request %s', url.pathname);
-    nock(url.origin).get(url.pathname).times(2).reply(200, content);
-    filesData.sourceIds.slice(0, 3).forEach((id) => {
-      debugNock('Http request %s', filesData.sources[id].source);
-      nock(url.origin).get(filesData.sources[id].source)
-        .reply(
-          200,
-          () => fs.createReadStream(`__fixtures__${filesData.sources[id].source}`),
-          { responseType: 'steam' },
-        );
-    });
-
-    const [dir, args] = getData(dirType, url.href);
-    const filepath = await app(...args); // main html
-    debugFsRead('Read file %s', `${dir}/${pageName}.html`);
-    const fileContent = await promises.readFile(`${dir}/${pageName}.html`, 'utf-8');
-
-    expect(filepath).toBe(`${dir}/${pageName}.html`);
-
-    expect(fileContent).toBe(proccessedContent);
-
-    expect(await promises.access(`${dir}/${pageName}_files`)).toBeUndefined();
-
-    await Promise.all(filesData.sourceIds.map((id) => {
-      debugFsRead('Read file %s', filesData.sources[id].fileName);
-      return promises.access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
-    })).then((results) => results.forEach((result) => expect(result).toBeUndefined()));
-  });
-
-  test('errors with file system', async () => {
-    nock(url.origin).get(url.pathname).times(2).reply(200, content);
-    await expect(() => app(url.href, `${fixturesPath}/unwritable`)).rejects.toThrow();
-    await expect(() => app(url.href, `${fixturesPath}/unexists`)).rejects.toThrow();
-  });
-
-  test('errors with network', async () => {
-    debugNock('Http request', url);
-    nock(url.origin).get(url.pathname).reply(102, content);
-    nock(url.origin).get(url.pathname).reply(302, content);
-    nock(url.origin).get(url.pathname).reply(404);
-    nock(url.origin).get(url.pathname).reply(503);
-    await expect(() => app(url.href, tmpdir)).rejects.toThrow();
-    await expect(() => app(tmpdir, url.href)).rejects.toThrow();
-    await expect(() => app(tmpdir, url.href)).rejects.toThrow();
-    await expect(() => app(tmpdir, url.href)).rejects.toThrow();
+  afterEach(() => {
+    nock.cleanAll();
   });
 
   afterAll(async () => {
@@ -102,5 +56,65 @@ describe('testing function app', () => {
     await promises.rmdir(tmpdir, { recursive: true });
     await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
     await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
+  });
+
+  test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
+    debugNock('Http request %s', url.pathname);
+    const scope = nock(url.origin).get(url.pathname).times(2).reply(200, content);
+    const sourceScopes = filesData.sourceIds.slice(0, 3).map((id) => {
+      debugNock('Http request %s', filesData.sources[id].source);
+      const sourceScope = nock(url.origin).get(filesData.sources[id].source)
+        .reply(
+          200,
+          () => fs.createReadStream(`__fixtures__${filesData.sources[id].source}`),
+          { responseType: 'steam' },
+        );
+      return sourceScope;
+    });
+
+    const [dir, args] = getData(dirType, url.href);
+    const filepath = await app(...args); // main html
+    debugFsRead('Read file %s', `${dir}/${pageName}.html`);
+    const fileContent = await promises.readFile(`${dir}/${pageName}.html`, 'utf-8');
+
+    expect(scope.isDone()).toBeTruthy();
+    sourceScopes.forEach((item) => expect(item.isDone()).toBeTruthy());
+    expect(filepath).toBe(`${dir}/${pageName}.html`);
+    expect(fileContent).toBe(proccessedContent);
+    expect(await promises.access(`${dir}/${pageName}_files`)).toBeUndefined();
+
+    await Promise.all(filesData.sourceIds.map((id) => {
+      debugFsRead('Read file %s', filesData.sources[id].fileName);
+      return promises.access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
+    })).then((results) => results.forEach((result) => expect(result).toBeUndefined()));
+  });
+
+  test('errors with file system', async () => {
+    const scope = nock(url.origin).get(url.pathname).times(2).reply(200, content);
+    await expect(app(url.href, `${fixturesPath}/unwritable`)).rejects
+      .toThrow(`Failed to write data into ${fixturesPath}/unwritable; - permission denied`);
+    await expect(app(url.href, `${fixturesPath}/unexists`)).rejects
+      .toThrow(`Failed to write data into ${fixturesPath}/unexists; - no such file or directory`);
+    expect(scope.isDone()).toBeTruthy();
+  });
+
+  test('errors from server', async () => {
+    debugNock('Http request', url);
+    const scopes = [102, 302, 404, 503]
+      .map((item) => nock(url.origin).get(url.pathname).reply(item));
+    await expect(app(url.href, tmpdir)).rejects
+      .toThrow(`Failed to load data from ${url.href}; - info, code: 102.`);
+    await expect(app(url.href, tmpdir)).rejects
+      .toThrow(`Failed to load data from ${url.href}; - request was redirected, code: 302.`);
+    await expect(app(url.href, tmpdir)).rejects
+      .toThrow(`Failed to load data from ${url.href}; - request was wrong, code: 404.`);
+    await expect(app(url.href, tmpdir)).rejects
+      .toThrow(`Failed to load data from ${url.href}; - was error on the server, code: 503.`);
+    scopes.forEach((item) => expect(item.isDone()).toBeTruthy());
+  });
+
+  test('net error', async () => {
+    nock.disableNetConnect();
+    await expect(app(url.href, tmpdir)).rejects.toThrow(`Failed to load data from ${url.href}.`);
   });
 });
