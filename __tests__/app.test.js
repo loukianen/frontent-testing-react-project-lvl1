@@ -66,7 +66,7 @@ describe('testing function app', () => {
       const sourceScope = nock(url.origin).get(filesData.sources[id].source)
         .reply(
           200,
-          () => fs.createReadStream(`${fixturesPath}${filesData.sources[id].source}`),
+          fs.readFileSync(`${fixturesPath}${filesData.sources[id].source}`),
           { responseType: 'steam' },
         );
       return sourceScope;
