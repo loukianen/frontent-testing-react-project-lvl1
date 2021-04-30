@@ -54,11 +54,11 @@ describe('testing function app', () => {
     debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}_files`);
     debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}.html`);
     await promises.rmdir(tmpdir, { recursive: true });
-    await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
-    await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
+    // await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
+    // await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
   });
 
-  test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
+  test.each(['definedDir'])('write file to (%s)', async (dirType) => {
     debugNock('Http request %s', url.pathname);
     const scope = nock(url.origin).get(url.pathname).times(2).reply(200, content);
     const sourceScopes = filesData.sourceIds.slice(0, 3).map((id) => {
