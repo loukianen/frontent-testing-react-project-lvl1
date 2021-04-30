@@ -2,7 +2,7 @@
   "name": "@hexlet/code",
   "version": "1.0.0",
   "description": "education project",
-  "main": "app/app.js",
+  "main": "index.js",
   "scripts": {
     "test": "jest",
     "lint": "npx eslint .",
