@@ -99,7 +99,7 @@ describe('testing function app', () => {
   test('errors with permision denied', async () => {
     const scope = nock(url.origin).get(url.pathname).reply(200, content);
     await expect(app(url.href, '/sys')).rejects
-      .toThrow('Failed to write data into /sys; - operation not allowed');
+      .toThrow('Failed to write data into /sys; - was unknown error. Write us, please');
     expect(scope.isDone()).toBeTruthy();
   });
 

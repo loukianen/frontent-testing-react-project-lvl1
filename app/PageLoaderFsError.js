@@ -1,7 +1,5 @@
 const getCaseText = (code) => {
   switch (code) {
-    case -1:
-      return 'operation not allowed';
     case -2:
       return 'no such file or directory';
     case -13:
