@@ -56,6 +56,7 @@ describe('testing function app', () => {
     await promises.rmdir(tmpdir, { recursive: true });
     await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
     await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
+    await promises.rmdir(`${fixturesPath}/page`, { recursive: true });
   });
 
   test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
@@ -99,11 +100,25 @@ describe('testing function app', () => {
     });
   });
 
-  test('errors with unexists directory', async () => {
-    const scope = nock(url.origin).get(url.pathname).reply(200, content);
-    await expect(app(url.href, `${fixturesPath}/unexists`)).rejects
+  test('unexists directory', async () => {
+    const scope = nock(url.origin).get(url.pathname).times(3).reply(200, content);
+    const sourceScopes = filesData.sourceIds.slice(0, 3).map((id) => {
+      debugNock('Http request %s', filesData.sources[id].source);
+      const sourceScope = nock(url.origin).get(filesData.sources[id].source)
+        .reply(
+          200,
+          fs.readFileSync(`${fixturesPath}${filesData.sources[id].source}`),
+          { responseType: 'steam' },
+        );
+      return sourceScope;
+    });
+    await expect(promises.access(`${fixturesPath}/page`)).rejects.toThrow();
+    await app(url.href, `${fixturesPath}/page`);
+    await expect(promises.access(`${fixturesPath}/page`)).resolves.toBeUndefined();
+    await expect(app(url.href, `${fixturesPath}/unexists/page`)).rejects
       .toThrow(`Failed to write data into ${fixturesPath}/unexists; - no such file or directory`);
     expect(scope.isDone()).toBeTruthy();
+    sourceScopes.forEach((item) => expect(item.isDone()).toBeTruthy());
   });
 
   test('errors with permision denied', async () => {

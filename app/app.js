@@ -111,14 +111,21 @@ export default async (requestUrl, dir = defaultDir) => {
   }
 
   try {
-    debugFs('Create file %s', filepath);
+    await promises.access(path.dirname(dir));
+    await promises.mkdir(dir, { recursive: true });
+  } catch (e) {
+    throw new PageLoaderFsError(e, path.dirname(dir));
+  }
+
+  try {
+    debugFs('Create file %s', filepath, dir);
     await promises.writeFile(filepath, newHtml, 'utf-8');
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
   }
 
   try {
-    debugFs('Create directory %s', filesDirName);
+    // debugFs('Create directory %s', filesDirName);
     await promises.mkdir(filesDirName, { recursive: true });
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
