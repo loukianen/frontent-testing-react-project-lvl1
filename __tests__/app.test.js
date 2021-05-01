@@ -98,12 +98,12 @@ describe('testing function app', () => {
 
   test('errors with permision denied', async () => {
     const unwritableDirPath = `${fixturesPath}/unwritable`;
-    fs.mkdirSync(unwritableDirPath, 555);
+    await promises.mkdir(unwritableDirPath, { mode: 555 });
     // fs.chmodSync(unwritableDirPath, 555);
     await expect(app(url.href, unwritableDirPath)).rejects
       .toThrow(`Failed to write data into ${unwritableDirPath}; - permission denied`);
     await promises.rmdir(unwritableDirPath, { recursive: true });
-  }, 10000);
+  });
 
   test('errors from server', async () => {
     debugNock('Http request', url);
