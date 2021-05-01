@@ -90,19 +90,17 @@ describe('testing function app', () => {
   });
 
   test('errors with unexists directory', async () => {
-    const scope = nock(url.origin).get(url.pathname).times(1).reply(200, content);
+    const scope = nock(url.origin).get(url.pathname).reply(200, content);
     await expect(app(url.href, `${fixturesPath}/unexists`)).rejects
       .toThrow(`Failed to write data into ${fixturesPath}/unexists; - no such file or directory`);
     expect(scope.isDone()).toBeTruthy();
   });
 
   test('errors with permision denied', async () => {
-    const unwritableDirPath = `${fixturesPath}/unwritable`;
-    await promises.mkdir(unwritableDirPath, { mode: 555 });
-    // fs.chmodSync(unwritableDirPath, 555);
-    await expect(app(url.href, unwritableDirPath)).rejects
-      .toThrow(`Failed to write data into ${unwritableDirPath}; - permission denied`);
-    await promises.rmdir(unwritableDirPath, { recursive: true });
+    const scope = nock(url.origin).get(url.pathname).reply(200, content);
+    await expect(app(url.href, '/sys')).rejects
+      .toThrow('Failed to write data into /sys; - operation not allowed');
+    expect(scope.isDone()).toBeTruthy();
   });
 
   test('errors from server', async () => {

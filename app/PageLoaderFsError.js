@@ -1,5 +1,7 @@
 const getCaseText = (code) => {
   switch (code) {
+    case -1:
+      return 'operation not allowed';
     case -2:
       return 'no such file or directory';
     case -13:
@@ -19,6 +21,5 @@ export default class extends Error {
     this.error = error;
     this.sourcePath = sourcePath;
     this.message = `\nFailed to write data into ${this.sourcePath}${getReason(this.error)}\n`;
-    console.log(error.message);
   }
 }
