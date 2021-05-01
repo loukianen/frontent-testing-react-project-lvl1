@@ -87,6 +87,16 @@ describe('testing function app', () => {
       debugFsRead('Read file %s', filesData.sources[id].fileName);
       return promises.access(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
     })).then((results) => results.forEach((result) => expect(result).toBeUndefined()));
+    filesData.sourceIds.forEach(async (id) => {
+      let sourceStats = await promises.stat(`${fixturesPath}${filesData.sources[id].source}`);
+      if (sourceStats.isDirectory()) {
+        sourceStats = await promises
+          .stat(`${fixturesPath}${filesData.sources[id].source}/index.html`);
+      }
+      const fileStats = await promises
+        .stat(`${dir}/${pageName}_files${filesData.sources[id].fileName}`);
+      expect(sourceStats.size).toBe(fileStats.size);
+    });
   });
 
   test('errors with unexists directory', async () => {
