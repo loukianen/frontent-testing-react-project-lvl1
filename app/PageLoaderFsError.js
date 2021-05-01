@@ -19,5 +19,6 @@ export default class extends Error {
     this.error = error;
     this.sourcePath = sourcePath;
     this.message = `\nFailed to write data into ${this.sourcePath}${getReason(this.error)}\n`;
+    console.log(error.message);
   }
 }
