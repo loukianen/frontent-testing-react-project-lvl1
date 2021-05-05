@@ -21,7 +21,7 @@ jobs:
         run: npm ci
       - name: test
         run: npm run-script test -- --coverage
-      - uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           fail_ci_if_error: true # optional (default = false)
