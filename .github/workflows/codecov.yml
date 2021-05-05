@@ -20,7 +20,7 @@ jobs:
       - name: npm install
         run: npm ci
       - name: test
-        run: npm run-script test --coverage
+        run: jest --coverage
       - name: coverage
         uses: codecov/codecov-action@v1
         with:
