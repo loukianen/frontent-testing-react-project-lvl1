@@ -9,7 +9,6 @@ lint: make lint,
 
 ## Hexlet tests and linter status:
 [![Actions Status](https://github.com/loukianen/frontent-testing-react-project-lvl1/workflows/hexlet-check/badge.svg)](https://github.com/loukianen/frontent-testing-react-project-lvl1/actions)
-
 [![codecov](https://codecov.io/gh/loukianen/frontent-testing-react-project-lvl1/branch/master/graph/badge.svg?token=65C6R12F5Y)](https://codecov.io/gh/loukianen/frontent-testing-react-project-lvl1)
 
 ## Asciinemas:
