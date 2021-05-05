@@ -2,8 +2,6 @@ const getCaseText = (code) => {
   switch (code) {
     case -2:
       return 'no such file or directory';
-    case -13:
-      return 'permission denied';
     default:
       return 'was unknown error. Write us, please';
   }
