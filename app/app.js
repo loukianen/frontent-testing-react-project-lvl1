@@ -125,7 +125,7 @@ export default async (requestUrl, dir = defaultDir) => {
   }
 
   try {
-    // debugFs('Create directory %s', filesDirName);
+    debugFs('Create directory %s', filesDirName);
     await promises.mkdir(filesDirName, { recursive: true });
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
