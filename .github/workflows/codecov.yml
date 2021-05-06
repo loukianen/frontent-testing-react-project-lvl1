@@ -27,3 +27,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
+        uses: paambaati/codeclimate-action@v2.6.0
+        env:
+          CC_TEST_REPORTER_ID: 5ea4c52995ed83d8597fb35c64ead5e3a7b278179599a5bed5fd83bb4e405fef
