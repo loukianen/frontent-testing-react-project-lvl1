@@ -5,8 +5,8 @@ import fs from 'fs';
 import promises from 'fs/promises';
 import path from 'path';
 import cheerio from 'cheerio';
-import PageLoaderNetError from './PageLoaderNetError';
-import PageLoaderFsError from './PageLoaderFsError';
+import PageLoaderNetError from './errors/PageLoaderNetError';
+import PageLoaderFsError from './errors/PageLoaderFsError';
 
 const debugHttpFiles = debug('page-loader:http:files');
 const debugHttpMain = debug('page-loader:http:main');

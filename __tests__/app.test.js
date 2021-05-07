@@ -22,6 +22,17 @@ let content;
 let proccessedContent;
 let tmpdir;
 
+const getSourceScopes = () => filesData.sourceIds.slice(0, 3).map((id) => {
+  debugNock('Http request %s', filesData.sources[id].source);
+  const sourceScope = nock(url.origin).get(filesData.sources[id].source)
+    .reply(
+      200,
+      fs.readFileSync(`${fixturesPath}${filesData.sources[id].source}`),
+      { responseType: 'steam' },
+    );
+  return sourceScope;
+});
+
 const getData = (type, filePath) => {
   const mapping = {
     definedDir: () => [tmpdir, [filePath, tmpdir]],
@@ -62,16 +73,7 @@ describe('testing function app', () => {
   test.each(['definedDir', 'defaultDir'])('write file to (%s)', async (dirType) => {
     debugNock('Http request %s', url.pathname);
     const scope = nock(url.origin).get(url.pathname).times(2).reply(200, content);
-    const sourceScopes = filesData.sourceIds.slice(0, 3).map((id) => {
-      debugNock('Http request %s', filesData.sources[id].source);
-      const sourceScope = nock(url.origin).get(filesData.sources[id].source)
-        .reply(
-          200,
-          fs.readFileSync(`${fixturesPath}${filesData.sources[id].source}`),
-          { responseType: 'steam' },
-        );
-      return sourceScope;
-    });
+    const sourceScopes = getSourceScopes();
 
     const [dir, args] = getData(dirType, url.href);
     const filepath = await app(...args); // main html
@@ -102,16 +104,7 @@ describe('testing function app', () => {
 
   test('unexists directory', async () => {
     const scope = nock(url.origin).get(url.pathname).times(3).reply(200, content);
-    const sourceScopes = filesData.sourceIds.slice(0, 3).map((id) => {
-      debugNock('Http request %s', filesData.sources[id].source);
-      const sourceScope = nock(url.origin).get(filesData.sources[id].source)
-        .reply(
-          200,
-          fs.readFileSync(`${fixturesPath}${filesData.sources[id].source}`),
-          { responseType: 'steam' },
-        );
-      return sourceScope;
-    });
+    const sourceScopes = getSourceScopes();
     await expect(promises.access(`${fixturesPath}/page`)).rejects.toThrow();
     await app(url.href, `${fixturesPath}/page`);
     await expect(promises.access(`${fixturesPath}/page`)).resolves.toBeUndefined();
