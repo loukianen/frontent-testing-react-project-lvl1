@@ -31,5 +31,6 @@ jobs:
         uses: paambaati/codeclimate-action@v2.6.0
         env:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
-        coverageCommand: npm test -- --coverage --coverageProvider=v8
-        debug: true
+        with:
+          coverageCommand: npx jest --coverage
+          debug: true
