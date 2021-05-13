@@ -8,9 +8,12 @@ import cheerio from 'cheerio';
 import PageLoaderNetError from './errors/PageLoaderNetError';
 import PageLoaderFsError from './errors/PageLoaderFsError';
 
+const debugCommon = debug('page-loader');
+/*
 const debugHttpFiles = debug('page-loader:http:files');
 const debugHttpMain = debug('page-loader:http:main');
 const debugFs = debug('page-loader:fs:');
+*/
 
 const defaultDir = process.cwd();
 const tags = ['img', 'link', 'script'];
@@ -18,7 +21,7 @@ const tags = ['img', 'link', 'script'];
 const createFile = async (source, filepath) => {
   let response;
   try {
-    debugHttpFiles('GET %s', source);
+    debugCommon('GET %s', source); // debugHttpFiles('GET %s', source);
     const request = axios.create({
       baseURL: source,
       method: 'GET',
@@ -96,7 +99,7 @@ export default async (requestUrl, dir = defaultDir) => {
   let filesSource;
 
   try {
-    debugHttpMain('GET %s', url.href);
+    debugCommon('GET %s', url.href); // debugHttpMain('GET %s', url.href);
     const { data } = await axios.get(url.href);
     html = data;
   } catch (e) {
@@ -118,14 +121,14 @@ export default async (requestUrl, dir = defaultDir) => {
   }
 
   try {
-    debugFs('Create file %s', filepath, dir);
+    debugCommon('Create file %s', filepath, dir); // debugFs('Create file %s', filepath, dir);
     await promises.writeFile(filepath, newHtml, 'utf-8');
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
   }
 
   try {
-    debugFs('Create directory %s', filesDirName);
+    debugCommon('Create directory %s', filesDirName); // debugFs('Create directory %s', filesDirName);
     await promises.mkdir(filesDirName, { recursive: true });
   } catch (e) {
     throw new PageLoaderFsError(e, dir);

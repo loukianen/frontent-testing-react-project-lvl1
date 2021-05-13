@@ -64,7 +64,7 @@ describe('testing function app', () => {
     debugFsRm('Remove temporary directory %s', tmpdir);
     debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}_files`);
     debugFsRm('Remove temporary directory %s', `${process.cwd()}/${pageName}.html`);
-    await promises.rmdir(tmpdir, { recursive: true });
+    // await promises.rmdir(tmpdir, { recursive: true });
     await promises.rmdir(`${process.cwd()}/${pageName}_files`, { recursive: true });
     await promises.rm(`${process.cwd()}/${pageName}.html`, { forse: true });
     await promises.rmdir(`${fixturesPath}/page`, { recursive: true });
