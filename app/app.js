@@ -32,6 +32,7 @@ const createFile = async (source, filepath) => {
     throw new PageLoaderNetError(e, source);
   }
   try {
+    debugCommon('Create source file %s', filepath);
     await response.data.pipe(fs.createWriteStream(filepath));
     return true;
   } catch (e) {
