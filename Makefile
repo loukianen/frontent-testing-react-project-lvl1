@@ -1,8 +1,7 @@
 install:
 	npm install
+	npm build
 	npm link
-exs:
-	page-loader https://sea-battle-nine.vercel.app
 lint:
 	npx eslint .
 test:

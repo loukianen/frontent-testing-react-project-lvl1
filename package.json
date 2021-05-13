@@ -9,7 +9,7 @@
     "build": "NODE_ENV=production babel app --out-dir dist --source-maps inline"
   },
   "bin": {
-    "page-loader": "app/bin/pageloader.js"
+    "page-loader": "dist/bin/pageloader.js"
   },
   "repository": {
     "type": "git",
