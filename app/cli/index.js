@@ -8,7 +8,7 @@ const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../package.js
 export default () => {
   program.version(pkg.version);
   program.description('downloads a page from the network and puts it in the specified directory (by default, in the program launch directory).');
-  program.option('-o, --output [dir]', 'output dir (default: "/").');
+  program.option('-o, --output [dir]', 'output dir (default: "/").', process.cwd());
   program.arguments('<url>');
   program.action((url, options) => pageLoader(url, options.output));
   program.parse(process.argv);
