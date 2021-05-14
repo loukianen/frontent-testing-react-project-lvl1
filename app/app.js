@@ -92,6 +92,8 @@ const getNewHtml = (sourcesData, html) => {
 };
 
 export default async (requestUrl, dir = defaultDir) => {
+  console.log(`defaultDir: ${defaultDir}`);
+  console.log(`Dir: ${dir}`);
   const url = new URL(requestUrl);
   const pageName = getName(url);
   const filepath = `${dir}/${pageName}.html`;
