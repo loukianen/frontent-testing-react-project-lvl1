@@ -73,6 +73,7 @@ const getSourcesInfo = (html, tagNames, baseUrl) => {
     });
     return [...acc, ...links];
   }, []);
+  console.log(foundLinks);
   const linksForComparison = foundLinks
     .map((link) => ({ ...link, normalized: new URL(link.origin, baseUrl) }));
   const localLinks = linksForComparison
@@ -103,12 +104,14 @@ export default async (requestUrl, dir = defaultDir) => {
     debugCommon('GET %s', url.href); // debugHttpMain('GET %s', url.href);
     const { data } = await axios.get(url.href);
     html = data;
+    console.log(html);
   } catch (e) {
     throw new PageLoaderNetError(e, url.href);
   }
 
   try {
     filesSource = getSourcesInfo(html, tags, url);
+    console.log(filesSource);
     newHtml = getNewHtml(filesSource, html);
   } catch (e) {
     throw new Error('Failed to parse loaded data. Write us, please');
