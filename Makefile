@@ -5,4 +5,4 @@ install:
 lint:
 	npx eslint .
 test:
-	DEBUG=axios,page-loader jest
+	jest
