@@ -1,8 +1,7 @@
 import axios from 'axios';
 import debug from 'debug';
 import 'axios-debug-log';
-import fs from 'fs';
-import promises from 'fs/promises';
+import fs from 'fs/promises';
 import path from 'path';
 import cheerio from 'cheerio';
 import PageLoaderNetError from './errors/PageLoaderNetError';
@@ -10,7 +9,6 @@ import PageLoaderFsError from './errors/PageLoaderFsError';
 
 const debugCommon = debug('page-loader');
 
-const defaultDir = process.cwd();
 const tags = ['img', 'link', 'script'];
 
 const createFile = async (source, filepath) => {
@@ -20,7 +18,7 @@ const createFile = async (source, filepath) => {
     const request = axios.create({
       baseURL: source,
       method: 'GET',
-      responseType: 'stream',
+      responseType: 'arraybuffer',
     });
     response = await request();
   } catch (e) {
@@ -28,7 +26,7 @@ const createFile = async (source, filepath) => {
   }
   try {
     debugCommon('Create source file %s', filepath);
-    await response.data.pipe(fs.createWriteStream(filepath));
+    await fs.writeFile(filepath, response.data);
     return true;
   } catch (e) {
     throw new PageLoaderFsError(e, filepath);
@@ -85,7 +83,7 @@ const getNewHtml = (sourcesData, html) => {
   return $.html();
 };
 
-export default async (requestUrl, dir = defaultDir) => {
+export default async (requestUrl, dir) => {
   const url = new URL(requestUrl);
   const pageName = getName(url);
   const filepath = `${dir}/${pageName}.html`;
@@ -95,7 +93,7 @@ export default async (requestUrl, dir = defaultDir) => {
   let filesSource;
 
   try {
-    debugCommon('GET %s', url.href); // debugHttpMain('GET %s', url.href);
+    debugCommon('GET %s', url.href);
     const { data } = await axios.get(url.href);
     html = data;
   } catch (e) {
@@ -110,22 +108,22 @@ export default async (requestUrl, dir = defaultDir) => {
   }
 
   try {
-    await promises.access(path.dirname(dir));
-    await promises.mkdir(dir, { recursive: true });
+    await fs.access(path.dirname(dir));
+    await fs.mkdir(dir, { recursive: true });
   } catch (e) {
     throw new PageLoaderFsError(e, path.dirname(dir));
   }
 
   try {
-    debugCommon('Create file %s', filepath, dir); // debugFs('Create file %s', filepath, dir);
-    await promises.writeFile(filepath, newHtml, 'utf-8');
+    debugCommon('Create file %s', filepath, dir);
+    await fs.writeFile(filepath, newHtml, 'utf-8');
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
   }
 
   try {
-    debugCommon('Create directory %s', filesDirName); // debugFs('Create directory %s', filesDirName);
-    await promises.mkdir(filesDirName, { recursive: true });
+    debugCommon('Create directory %s', filesDirName);
+    await fs.mkdir(filesDirName, { recursive: true });
   } catch (e) {
     throw new PageLoaderFsError(e, dir);
   }
