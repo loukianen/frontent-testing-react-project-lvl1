@@ -37,7 +37,8 @@ const sourceFilesData = [
 
 const getSourceScopes = () => Promise.all(sourceFilesData.map(
   ({ sourceName, sourcePath }) => fs.readFile(`${fixturesPath}/expected/${sourceName}`)
-    .then((content) => nock(url.origin).get(sourcePath).reply(200, content)),
+    .then((content) => nock(url.origin)
+      .get(sourcePath).reply(200, content, { responseType: 'arraybuffer' })),
 ));
 
 describe('testing function app', () => {
