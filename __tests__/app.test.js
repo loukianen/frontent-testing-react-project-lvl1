@@ -12,31 +12,16 @@ const fixturesPath = path.join(__dirname, '..', '__fixtures__');
 
 const pageName = 'ru-hexlet-io-courses';
 const contentPath = `${fixturesPath}/fakeCoursesPage.html`;
-const sourceFilesData = [
-  {
-    sourceName: 'nodejs.png',
-    sourcePath: '/assets/professions/nodejs.png',
-    localName: 'ru-hexlet-io-assets-professions-nodejs.png',
-  },
-  {
-    sourceName: 'application.css',
-    sourcePath: '/assets/application.css',
-    localName: 'ru-hexlet-io-assets-application.css',
-  },
-  {
-    sourceName: 'runtime.js',
-    sourcePath: '/packs/js/runtime.js',
-    localName: 'ru-hexlet-io-packs-js-runtime.js',
-  },
-  {
-    sourceName: 'index.html',
-    sourcePath: '/courses',
-    localName: 'ru-hexlet-io-courses.html',
-  },
+
+const makingSourcesData = [
+  ['nodejs.png', '/assets/professions/nodejs.png'],
+  ['application.css', '/assets/application.css'],
+  ['runtime.js', '/packs/js/runtime.js'],
+  ['index.html', '/courses'],
 ];
 
-const getSourceScopes = () => Promise.all(sourceFilesData.map(
-  ({ sourceName, sourcePath }) => fs.readFile(`${fixturesPath}/expected/${sourceName}`)
+const getSourceScopes = () => Promise.all(makingSourcesData.map(
+  ([sourceName, sourcePath]) => fs.readFile(`${fixturesPath}/expected/${sourceName}`)
     .then((content) => nock(url.origin)
       .get(sourcePath).reply(200, content, { responseType: 'arraybuffer' })),
 ));
@@ -76,7 +61,14 @@ describe('testing function app', () => {
     expect(loadedContent).toBe(expectedContent);
   });
 
-  test.each(sourceFilesData)('check source file (%#)', async ({ sourceName, localName }) => {
+  const sourceTestData = [
+    ['nodejs.png', 'ru-hexlet-io-assets-professions-nodejs.png'],
+    ['application.css', 'ru-hexlet-io-assets-application.css'],
+    ['runtime.js', 'ru-hexlet-io-packs-js-runtime.js'],
+    ['index.html', 'ru-hexlet-io-courses.html'],
+  ];
+
+  test.each(sourceTestData)('check source file (%s)', async (sourceName, localName) => {
     const expectedContent = await fs
       .readFile(`${fixturesPath}/expected/${sourceName}`);
     const loadedContent = await fs
