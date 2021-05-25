@@ -1,4 +1,4 @@
-#  Hexlet project Page Loader (Testing)
+# Hexlet project Page Loader (Testing)
 
 [![Actions Status](https://github.com/loukianen/frontent-testing-react-project-lvl1/workflows/hexlet-check/badge.svg)](https://github.com/loukianen/frontent-testing-react-project-lvl1/actions)
 [![Maintainability](https://api.codeclimate.com/v1/badges/c9ddd9ca31e8b4931b9f/maintainability)](https://codeclimate.com/github/loukianen/frontent-testing-react-project-lvl1/maintainability)
