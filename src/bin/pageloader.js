@@ -8,7 +8,7 @@ const start = async () => {
   const pkg = JSON.parse(await fs.readFile(path.resolve(__dirname, '../../package.json')));
   program.version(pkg.version);
   program.description('downloads a page from the network and puts it in the specified directory (by default, in the program launch directory).');
-  program.option('-o, --output [dir]', 'output dir (default: "/").', process.cwd());
+  program.option('-o, --output [dir]', 'output dir', process.cwd());
   program.arguments('<url>');
   program.action((url, options) => {
     pageLoader(url, options.output)

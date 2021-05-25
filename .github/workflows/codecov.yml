@@ -20,6 +20,8 @@ jobs:
       - name: npm install
         run: npm ci
       - name: test
+        run: make test
+      - name: codecov
         run: npx jest --coverage
       - name: coverage
         uses: codecov/codecov-action@v1
@@ -27,7 +29,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
-      - name: codecilmet
+      - name: codecilmate
         uses: paambaati/codeclimate-action@v2.6.0
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}

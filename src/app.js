@@ -53,7 +53,7 @@ const getName = (url) => {
 };
 
 const getFilePath = (sourceUrl, baseUrl) => {
-  const name = `${getName(baseUrl)}_files/${getName(sourceUrl)}`;
+  const name = path.join(`${getName(baseUrl)}_files`, `${getName(sourceUrl)}`);
   const isSourceDirectory = path.extname(sourceUrl.href) === '';
   return isSourceDirectory ? `${name}.html` : name;
 };
@@ -86,8 +86,8 @@ const getNewHtml = (sourcesData, html) => {
 export default async (requestUrl, dir) => {
   const url = new URL(requestUrl);
   const pageName = getName(url);
-  const filepath = `${dir}/${pageName}.html`;
-  const filesDirName = `${dir}/${pageName}_files`;
+  const filepath = path.join(`${dir}`, `${pageName}.html`);
+  const filesDirName = path.join(`${dir}`, `${pageName}_files`);
   let html;
   let newHtml;
   let filesSource;
@@ -129,7 +129,7 @@ export default async (requestUrl, dir) => {
   }
 
   filesSource.forEach((item) => {
-    createFile(item.normalized.href, `${dir}/${item.newFilePath}`);
+    createFile(item.normalized.href, path.join(`${dir}`, `${item.newFilePath}`));
   });
   return filepath;
 };

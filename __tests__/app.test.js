@@ -29,26 +29,16 @@ const getSourceScopes = () => Promise.all(makingSourcesData.map(
 describe('testing function app', () => {
   let tmpdir;
   let content;
-  let scope;
-  let sourceScopes;
   let localFileName;
 
   beforeAll(async () => {
     debugCommon('Make temporary directory %s', path.join(os.tmpdir()));
+    nock.disableNetConnect();
     tmpdir = await fs.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
     content = await fs.readFile(contentPath, 'utf-8');
-    scope = nock(url.origin).get(url.pathname).reply(200, content);
-    sourceScopes = await getSourceScopes();
+    nock(url.origin).get(url.pathname).reply(200, content);
+    await getSourceScopes();
     localFileName = await app(url.href, tmpdir);
-  });
-
-  afterEach(() => {
-    nock.cleanAll();
-  });
-
-  afterAll(async () => {
-    debugCommon('Remove temporary directory %s', tmpdir);
-    await fs.rmdir(tmpdir, { recursive: true });
   });
 
   test('check main html-files', async () => {
@@ -77,48 +67,27 @@ describe('testing function app', () => {
     expect(loadedContent).toEqual(expectedContent);
   });
 
-  test('testing scopes', () => {
-    expect(scope.isDone()).toBeTruthy();
-    sourceScopes.forEach((item) => expect(item.isDone()).toBeTruthy());
-  });
-});
+  test('checking behavior with not exists directory', async () => {
+    nock.disableNetConnect();
+    nock(url.origin).get(url.pathname).times(2).reply(200, content);
+    await getSourceScopes();
+    await app(url.href, `${tmpdir}/page`);
 
-describe('testing errors', () => {
-  let htmlContent;
+    await expect(fs.access(`${tmpdir}/page`)).resolves.toBeUndefined();
+    await expect(app(url.href, `${tmpdir}/unexists/page`)).rejects
+      .toThrow(`Failed to write data into ${tmpdir}/unexists; - no such file or directory`);
 
-  beforeAll(async () => {
-    debugCommon('Make temporary directory %s', path.join(os.tmpdir()));
-    htmlContent = await fs.readFile(contentPath, 'utf-8');
-  });
-
-  afterAll(async () => {
-    await fs.rmdir(`${fixturesPath}/page`, { recursive: true });
-  });
-
-  afterEach(() => {
     nock.cleanAll();
   });
 
-  test('unexists directory', async () => {
-    const scope = nock(url.origin).get(url.pathname).times(2).reply(200, htmlContent);
-    const sourceScopes = await getSourceScopes();
-    await app(url.href, `${fixturesPath}/page`);
-
-    await expect(fs.access(`${fixturesPath}/page`)).resolves.toBeUndefined();
-    await expect(app(url.href, `${fixturesPath}/unexists/page`)).rejects
-      .toThrow(`Failed to write data into ${fixturesPath}/unexists; - no such file or directory`);
-
-    expect(scope.isDone()).toBeTruthy();
-    sourceScopes.forEach((item) => expect(item.isDone()).toBeTruthy());
-  });
-
-  test('errors with permision denied', async () => {
-    const scope = nock(url.origin).get(url.pathname).reply(200, htmlContent);
+  test('should throw errors if write in directory with permision denied', async () => {
+    nock.disableNetConnect();
+    nock(url.origin).get(url.pathname).reply(200, content);
 
     await expect(app(url.href, '/sys')).rejects
       .toThrow('Failed to write data into /sys; - was unknown error. Write us, please');
 
-    expect(scope.isDone()).toBeTruthy();
+    nock.cleanAll();
   });
 
   const errorsData = [
@@ -126,15 +95,20 @@ describe('testing errors', () => {
     [503, `Failed to load data from ${url.href}; - was error on the server, code: 503.`],
   ];
 
-  test.each(errorsData)('errors from server %s', async (errorCode, errorText) => {
+  test.each(errorsData)('should throw errors from server %s', async (errorCode, errorText) => {
     debugCommon('Http request', url);
-    const scope = nock(url.origin).get(url.pathname).reply(errorCode);
+    nock.disableNetConnect();
+    nock(url.origin).get(url.pathname).reply(errorCode);
     await expect(app(url.href)).rejects.toThrow(errorText);
-    expect(scope.isDone()).toBeTruthy();
+
+    nock.cleanAll();
   });
 
-  test('net error', async () => {
+  test('should throw a network error', async () => {
     nock.disableNetConnect();
+
     await expect(app(url.href)).rejects.toThrow(`Failed to load data from ${url.href}.`);
+
+    nock.cleanAll();
   });
 });
