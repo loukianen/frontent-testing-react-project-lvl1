@@ -5,4 +5,4 @@ install:
 lint:
 	npx eslint .
 test:
-	jest
+	npx jest
