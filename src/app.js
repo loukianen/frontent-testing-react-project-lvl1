@@ -10,6 +10,7 @@ import PageLoaderFsError from './errors/PageLoaderFsError';
 const debugCommon = debug('page-loader');
 
 const tags = ['img', 'link', 'script'];
+const defaultDir = process.cwd();
 
 const createFile = async (source, filepath) => {
   let response;
@@ -83,7 +84,7 @@ const getNewHtml = (sourcesData, html) => {
   return $.html();
 };
 
-export default async (requestUrl, dir) => {
+export default async (requestUrl, dir = defaultDir) => {
   const url = new URL(requestUrl);
   const pageName = getName(url);
   const filepath = path.join(`${dir}`, `${pageName}.html`);
