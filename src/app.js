@@ -4,8 +4,7 @@ import 'axios-debug-log';
 import fs from 'fs/promises';
 import path from 'path';
 import cheerio from 'cheerio';
-import PageLoaderNetError from './errors/PageLoaderNetError';
-import PageLoaderFsError from './errors/PageLoaderFsError';
+import getPageloaderError from './errors';
 
 const debugCommon = debug('page-loader');
 
@@ -23,14 +22,14 @@ const createFile = async (source, filepath) => {
     });
     response = await request();
   } catch (e) {
-    throw new PageLoaderNetError(e, source);
+    throw getPageloaderError(e, source, 'net');
   }
   try {
     debugCommon('Create source file %s', filepath);
     await fs.writeFile(filepath, response.data);
     return true;
   } catch (e) {
-    throw new PageLoaderFsError(e, filepath);
+    throw getPageloaderError(e, filepath, 'fs');
   }
 };
 
@@ -98,7 +97,7 @@ export default async (requestUrl, dir = defaultDir) => {
     const { data } = await axios.get(url.href);
     html = data;
   } catch (e) {
-    throw new PageLoaderNetError(e, url.href);
+    throw getPageloaderError(e, url.href, 'net');
   }
 
   try {
@@ -112,21 +111,21 @@ export default async (requestUrl, dir = defaultDir) => {
     await fs.access(path.dirname(dir));
     await fs.mkdir(dir, { recursive: true });
   } catch (e) {
-    throw new PageLoaderFsError(e, path.dirname(dir));
+    throw getPageloaderError(e, path.dirname(dir), 'fs');
   }
 
   try {
     debugCommon('Create file %s', filepath, dir);
     await fs.writeFile(filepath, newHtml, 'utf-8');
   } catch (e) {
-    throw new PageLoaderFsError(e, dir);
+    throw getPageloaderError(e, dir, 'fs');
   }
 
   try {
     debugCommon('Create directory %s', filesDirName);
     await fs.mkdir(filesDirName, { recursive: true });
   } catch (e) {
-    throw new PageLoaderFsError(e, dir);
+    throw getPageloaderError(e, dir, 'fs');
   }
 
   filesSource.forEach((item) => {
